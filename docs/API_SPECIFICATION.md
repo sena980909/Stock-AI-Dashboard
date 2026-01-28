@@ -233,7 +233,139 @@ Authorization: Bearer <token>
 
 ---
 
-### 6. 시스템 모니터링 API (Admin)
+### 6. 관심 종목 API (Interest Stocks) - *NEW*
+
+| Method | URI | Description |
+|--------|-----|-------------|
+| GET | `/interests` | 관심 종목 목록 조회 |
+| POST | `/interests` | 관심 종목 등록 |
+| DELETE | `/interests/{stockCode}` | 관심 종목 삭제 |
+| PATCH | `/interests/{stockCode}` | 관심 종목 수정 |
+| GET | `/interests/check/{stockCode}` | 관심 종목 여부 확인 |
+
+#### GET `/interests`
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "stockCode": "005930",
+    "stockName": "삼성전자",
+    "displayOrder": 1,
+    "memo": "장기 투자",
+    "currentPrice": 162400,
+    "change": 2900,
+    "changePercent": 1.82,
+    "aiScore": 68,
+    "sentiment": "positive"
+  }
+]
+```
+
+#### POST `/interests`
+**Request:**
+```json
+{
+  "stockCode": "005930",
+  "stockName": "삼성전자",
+  "memo": "장기 투자 종목"
+}
+```
+
+---
+
+### 7. AI 추천 및 적중률 API (Recommendations) - *NEW*
+
+| Method | URI | Description |
+|--------|-----|-------------|
+| GET | `/recommendations/hit-rate` | 전체 적중률 조회 |
+| GET | `/recommendations/hit-rate/period` | 기간별 적중률 조회 |
+| GET | `/recommendations/hit-rate/stocks` | 종목별 적중률 조회 |
+| GET | `/recommendations/hit-rate/signal-type` | 신호 유형별 적중률 |
+| GET | `/recommendations/hit-rate/summary` | 적중률 요약 (대시보드) |
+| GET | `/recommendations/recent` | 최근 추천 목록 |
+| GET | `/recommendations/stock/{stockCode}` | 종목별 추천 이력 |
+
+#### GET `/recommendations/hit-rate`
+**Response:**
+```json
+{
+  "totalCount": 150,
+  "successCount": 98,
+  "failCount": 52,
+  "avgProfitRate": 2.45,
+  "hitRate": 65.33
+}
+```
+
+#### GET `/recommendations/hit-rate/stocks`
+**Response:**
+```json
+[
+  {
+    "stockCode": "005930",
+    "stockName": "삼성전자",
+    "totalCount": 25,
+    "successCount": 18,
+    "failCount": 7,
+    "avgProfitRate": 3.21,
+    "hitRate": 72.0
+  }
+]
+```
+
+#### GET `/recommendations/hit-rate/summary`
+**Response:**
+```json
+{
+  "overall": {
+    "totalCount": 150,
+    "successCount": 98,
+    "hitRate": 65.33
+  },
+  "bySignalType": {
+    "BUY": { "totalCount": 100, "successCount": 70, "hitRate": 70.0 },
+    "SELL": { "totalCount": 50, "successCount": 28, "hitRate": 56.0 }
+  },
+  "byStock": [...]
+}
+```
+
+---
+
+### 8. 일봉 데이터 API (Stock History) - *UPDATED*
+
+| Method | URI | Description |
+|--------|-----|-------------|
+| GET | `/stocks/{code}/history` | 일봉 데이터 조회 |
+| POST | `/stocks/{code}/history/collect` | 수동 데이터 수집 (관리자) |
+
+#### GET `/stocks/{code}/history?days=30`
+**Response (차트 라이브러리 호환 포맷):**
+```json
+{
+  "stockCode": "005930",
+  "days": 30,
+  "count": 22,
+  "data": [
+    {
+      "timestamp": "2024-01-02",
+      "date": "2024-01-02",
+      "open": 70500,
+      "high": 71200,
+      "low": 70300,
+      "close": 71000,
+      "volume": 12500000,
+      "change": 500,
+      "changePercent": 0.71
+    }
+  ]
+}
+```
+
+---
+
+### 9. 시스템 모니터링 API (Admin)
 
 | Method | URI | Description |
 |--------|-----|-------------|
