@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(npm install)",
+      "Bash(gradle wrapper:*)",
+      "Bash(npm run dev:*)",
+      "Bash(java:*)",
+      "Bash(start \"\" \"C:\\\\ProgramData\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Docker Desktop.lnk\")",
+      "Bash(start \"\" \"C:\\\\ProgramData\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Docker Desktop.lnk\")",
+      "Bash(docker info:*)",
+      "Bash(winget install:*)",
+      "Bash(export PATH:*)",
+      "Bash(curl:*)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Eclipse Adoptium/jdk-17.0.17.10-hotspot\")",
+      "Bash(./gradlew.bat bootRun:*)",
+      "Bash(docker ps:*)",
+      "Bash(python3:*)",
+      "Bash(gh auth status)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
