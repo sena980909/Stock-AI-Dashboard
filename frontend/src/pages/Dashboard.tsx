@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import StockList from '../components/dashboard/StockList'
 import NewsFeed from '../components/dashboard/NewsFeed'
-import HitRateCard from '../components/dashboard/HitRateCard'
+import AiPerformanceCard from '../components/dashboard/AiPerformanceCard'
 import WatchlistCard from '../components/dashboard/WatchlistCard'
+import MyWatchlistBar from '../components/dashboard/MyWatchlistBar'
+import MarketSummaryCard from '../components/dashboard/MarketSummaryCard'
 import Kospi200List from '../components/dashboard/Kospi200List'
 import AiReportModal from '../components/dashboard/AiReportModal'
 import StockSearch from '../components/common/StockSearch'
@@ -74,6 +76,12 @@ function Dashboard() {
           </div>
         </header>
 
+        {/* 내 관심종목 (상단 고정) */}
+        <MyWatchlistBar onStockClick={handleStockClick} />
+
+        {/* 오늘의 시장 요약 */}
+        <MarketSummaryCard />
+
         {/* 코스피 200 섹션 */}
         <section className="mb-8">
           <Kospi200List onStockClick={handleStockClick} />
@@ -94,10 +102,10 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* 사이드바 1: 관심종목 + 적중률 */}
+          {/* 사이드바 1: AI 성과 + 관심종목 */}
           <div className="space-y-6">
+            <AiPerformanceCard />
             <WatchlistCard />
-            <HitRateCard />
           </div>
 
           {/* 사이드바 2: 뉴스 */}

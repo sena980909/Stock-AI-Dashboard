@@ -186,4 +186,99 @@ export const healthApi = {
   }
 }
 
+// 시장 요약 API
+export const marketApi = {
+  getMarketSummary: async (): Promise<MarketSummary> => {
+    const response = await api.get('/market/summary')
+    return response.data.data
+  }
+}
+
+// AI 성과 리포트 API
+export const reportApi = {
+  getAiPerformance: async (days: number = 30): Promise<AiPerformance> => {
+    const response = await api.get(`/reports/performance?days=${days}`)
+    return response.data.data
+  },
+
+  generateSampleData: async (days: number = 30): Promise<AiPerformance> => {
+    const response = await api.post(`/reports/sample-data?days=${days}`)
+    return response.data.data
+  },
+
+  saveRecommendations: async (): Promise<void> => {
+    await api.post('/reports/recommendations/save')
+  },
+
+  updatePerformance: async (): Promise<void> => {
+    await api.post('/reports/performance/update')
+  }
+}
+
+// AI 성과 타입
+export interface AiPerformance {
+  totalCount: number
+  successCount: number
+  hitRate: number
+  averageReturn: number
+  bestStock: StockPerformanceItem | null
+  worstStock: StockPerformanceItem | null
+  periodDays: number
+  startDate: string
+  endDate: string
+  totalReturn: number
+  winStreak: number
+  recentHistory: RecommendationRecord[]
+  dailyStats: DailyStats[]
+}
+
+export interface StockPerformanceItem {
+  stockCode: string
+  stockName: string
+  returnRate: number
+  recoDate: string
+  aiScore: number
+  buyPrice: number
+  currentPrice: number
+}
+
+export interface RecommendationRecord {
+  id: number
+  stockCode: string
+  stockName: string
+  recoDate: string
+  aiScore: number
+  buyPrice: number
+  currentPrice: number
+  profitRate: number
+  isSuccess: boolean
+  signalType: string
+  recoReason: string
+  holdingDays: number
+}
+
+export interface DailyStats {
+  date: string
+  totalCount: number
+  successCount: number
+  hitRate: number
+  avgReturn: number
+}
+
+// 시장 요약 타입
+export interface MarketSummary {
+  kospiIndex: number
+  kospiChange: number
+  kospiChangePercent: number
+  kosdaqIndex: number
+  kosdaqChange: number
+  kosdaqChangePercent: number
+  marketStatus: string
+  marketAnalysis: string
+  topSectors: { name: string; changePercent: number }[]
+  bottomSectors: { name: string; changePercent: number }[]
+  keyIssues: string[]
+  updatedAt: string
+}
+
 export default api

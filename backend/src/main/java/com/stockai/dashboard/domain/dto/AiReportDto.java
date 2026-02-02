@@ -24,6 +24,8 @@ public class AiReportDto implements Serializable {
 
     private String stockCode;
     private String stockName;
+    private String sector;              // 업종 (반도체, 게임, 바이오 등)
+    private String companyDescription;  // 회사 소개 요약
     private Long currentPrice;
     private Double changePercent;
     private Long marketCap;

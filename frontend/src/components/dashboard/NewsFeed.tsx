@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { News } from '../../types'
 import { newsApi } from '../../services/api'
+import NewsModal from './NewsModal'
 
 function NewsFeed() {
   const [news, setNews] = useState<News[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [selectedNews, setSelectedNews] = useState<News | null>(null)
 
   const fetchNews = useCallback(async () => {
     try {
@@ -116,7 +118,11 @@ function NewsFeed() {
           </div>
         ) : (
           news.map((item) => (
-            <div key={item.id} className="p-4 hover:bg-gray-50 transition-colors">
+            <div
+              key={item.id}
+              className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+              onClick={() => setSelectedNews(item)}
+            >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-medium text-gray-900 line-clamp-2 text-sm flex-1">
                   {item.title}
@@ -151,6 +157,14 @@ function NewsFeed() {
           ))
         )}
       </div>
+
+      {/* News Detail Modal */}
+      {selectedNews && (
+        <NewsModal
+          news={selectedNews}
+          onClose={() => setSelectedNews(null)}
+        />
+      )}
     </div>
   )
 }

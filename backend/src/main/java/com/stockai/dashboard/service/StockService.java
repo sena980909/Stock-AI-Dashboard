@@ -24,6 +24,7 @@ public class StockService {
     private final StockPriceRepository stockPriceRepository;
     private final AIAnalysisRepository aiAnalysisRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final StockRankService stockRankService;
 
     private static final String STOCK_CACHE_PREFIX = "stock:";
 
@@ -90,26 +91,12 @@ public class StockService {
     }
 
     public Map<String, Object> getAIAnalysis(String symbol) {
-        Stock stock = stockRepository.findBySymbol(symbol)
-                .orElseThrow(() -> new RuntimeException("Stock not found: " + symbol));
-
-        // TODO: 실제 구현 시 AIAnalysisRepository에서 조회
+        // StockRankService의 AI 리포트 사용 (업종, SWOT 등 포함)
+        var report = stockRankService.getAiReport(symbol);
 
         Map<String, Object> response = new HashMap<>();
-        response.put("symbol", symbol);
-        response.put("score", 85);
-        response.put("recommendation", "buy");
-        response.put("reasons", Arrays.asList(
-                "최근 긍정적 기사가 30% 증가했습니다",
-                "기술적 지표상 상승 추세입니다",
-                "외국인 순매수 지속 중입니다"
-        ));
-        response.put("newsAnalysis", Map.of(
-                "positive", 45,
-                "negative", 20,
-                "neutral", 35
-        ));
-        response.put("lastUpdated", LocalDateTime.now());
+        response.put("success", true);
+        response.put("data", report);
 
         return response;
     }

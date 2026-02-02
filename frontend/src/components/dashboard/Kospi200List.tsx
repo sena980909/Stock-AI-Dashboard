@@ -16,6 +16,8 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
   const [totalCount, setTotalCount] = useState(200)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
+  const [showPageSelector, setShowPageSelector] = useState(false)
+  const [pageSelectorPosition, setPageSelectorPosition] = useState<'left' | 'right'>('left')
 
   const ITEMS_PER_PAGE = 10
 
@@ -54,7 +56,9 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
 
   // 페이지 변경
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setLoading(true)
+      setStocks([]) // 기존 데이터 클리어하여 덮어쓰기 방지
       setCurrentPage(page)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -90,41 +94,77 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
     }
   }
 
-  // 페이지네이션 번호 생성
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = []
-    const showPages = 5
+  // 페이지네이션 번호 생성 (1 2 3 ... 18 19 20 형식)
+  const getPageNumbers = (): { page: number | string; position?: 'left' | 'right' }[] => {
+    const pages: { page: number | string; position?: 'left' | 'right' }[] = []
 
-    if (totalPages <= showPages + 2) {
+    if (totalPages <= 10) {
+      // 10페이지 이하면 모두 표시
       for (let i = 1; i <= totalPages; i++) {
-        pages.push(i)
+        pages.push({ page: i })
       }
     } else {
-      pages.push(1)
+      // 항상 앞쪽 3개 표시
+      pages.push({ page: 1 }, { page: 2 }, { page: 3 })
 
-      if (currentPage > 3) {
-        pages.push('...')
+      // 현재 페이지가 앞쪽에 있으면
+      if (currentPage <= 4) {
+        pages.push({ page: 4 }, { page: 5 }, { page: '...', position: 'right' })
+      }
+      // 현재 페이지가 중간에 있으면
+      else if (currentPage >= 5 && currentPage <= totalPages - 4) {
+        pages.push({ page: '...', position: 'left' })
+        pages.push({ page: currentPage - 1 }, { page: currentPage }, { page: currentPage + 1 })
+        pages.push({ page: '...', position: 'right' })
+      }
+      // 현재 페이지가 뒤쪽에 있으면
+      else {
+        pages.push({ page: '...', position: 'left' }, { page: totalPages - 4 }, { page: totalPages - 3 })
       }
 
-      const start = Math.max(2, currentPage - 1)
-      const end = Math.min(totalPages - 1, currentPage + 1)
+      // 항상 뒤쪽 3개 표시
+      const existingPages = pages.map(p => p.page)
+      if (!existingPages.includes(totalPages - 2)) pages.push({ page: totalPages - 2 })
+      if (!existingPages.includes(totalPages - 1)) pages.push({ page: totalPages - 1 })
+      if (!existingPages.includes(totalPages)) pages.push({ page: totalPages })
+    }
 
-      for (let i = start; i <= end; i++) {
-        if (!pages.includes(i)) {
-          pages.push(i)
+    // 중복 제거
+    const uniquePages: { page: number | string; position?: 'left' | 'right' }[] = []
+    let prevWasEllipsis = false
+    for (const p of pages) {
+      if (p.page === '...') {
+        if (!prevWasEllipsis) {
+          uniquePages.push(p)
+          prevWasEllipsis = true
         }
-      }
-
-      if (currentPage < totalPages - 2) {
-        pages.push('...')
-      }
-
-      if (!pages.includes(totalPages)) {
-        pages.push(totalPages)
+      } else {
+        const exists = uniquePages.find(up => up.page === p.page)
+        if (!exists) {
+          uniquePages.push(p)
+        }
+        prevWasEllipsis = false
       }
     }
 
-    return pages
+    return uniquePages
+  }
+
+  // 중간 페이지 목록 가져오기 (... 클릭 시 표시)
+  const getMiddlePages = () => {
+    if (totalPages <= 10) return []
+    // 4~(totalPages-3) 범위의 페이지
+    const middlePages: number[] = []
+    for (let i = 4; i <= totalPages - 3; i++) {
+      middlePages.push(i)
+    }
+    return middlePages
+  }
+
+  // ... 버튼 클릭 핸들러
+  const handleEllipsisClick = (position: 'left' | 'right') => {
+    setPageSelectorPosition(position)
+    setShowPageSelector(true)
   }
 
   if (loading && stocks.length === 0) {
@@ -181,21 +221,33 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
       )}
 
       {/* Stock Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {stocks.map((stock, index) => (
-          <Kospi200Card
-            key={stock.code}
-            stock={stock}
-            rank={(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
-            isFavorite={favorites.has(stock.code)}
-            onFavoriteToggle={handleFavoriteToggle}
-            onClick={onStockClick}
-          />
-        ))}
+      <div className="relative min-h-[400px]">
+        {/* 로딩 오버레이 */}
+        {loading && (
+          <div className="absolute inset-0 bg-white bg-opacity-80 z-10 flex items-center justify-center rounded-lg">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-3"></div>
+              <p className="text-gray-600 font-medium">페이지 {currentPage} 로딩 중...</p>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {stocks.map((stock, index) => (
+            <Kospi200Card
+              key={stock.code}
+              stock={stock}
+              rank={(currentPage - 1) * ITEMS_PER_PAGE + index + 1}
+              isFavorite={favorites.has(stock.code)}
+              onFavoriteToggle={handleFavoriteToggle}
+              onClick={onStockClick}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className="mt-8 flex items-center justify-center gap-2">
+      <div className="mt-8 flex items-center justify-center gap-2 relative">
         <button
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
@@ -204,21 +256,27 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
           이전
         </button>
 
-        {getPageNumbers().map((page, index) => (
-          <button
-            key={index}
-            onClick={() => typeof page === 'number' && handlePageChange(page)}
-            disabled={page === '...'}
-            className={`px-3 py-2 text-sm border rounded transition-colors ${
-              page === currentPage
-                ? 'bg-blue-500 text-white border-blue-500'
-                : page === '...'
-                ? 'cursor-default'
-                : 'hover:bg-gray-50'
-            }`}
-          >
-            {page}
-          </button>
+        {getPageNumbers().map((item, index) => (
+          <div key={index} className="relative">
+            <button
+              onClick={() => {
+                if (typeof item.page === 'number') {
+                  handlePageChange(item.page)
+                } else if (item.page === '...' && item.position) {
+                  handleEllipsisClick(item.position)
+                }
+              }}
+              className={`px-3 py-2 text-sm border rounded transition-colors ${
+                item.page === currentPage
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : item.page === '...'
+                  ? 'hover:bg-blue-50 hover:border-blue-300 cursor-pointer'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              {item.page}
+            </button>
+          </div>
         ))}
 
         <button
@@ -228,6 +286,41 @@ const Kospi200List: React.FC<Kospi200ListProps> = ({ onStockClick }) => {
         >
           다음
         </button>
+
+        {/* 페이지 선택 팝업 */}
+        {showPageSelector && (
+          <>
+            {/* 배경 오버레이 */}
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowPageSelector(false)}
+            />
+            {/* 팝업 */}
+            <div className={`absolute bottom-full mb-2 z-50 bg-white rounded-lg shadow-xl border p-3 ${
+              pageSelectorPosition === 'left' ? 'left-1/4' : 'right-1/4'
+            }`}>
+              <div className="text-xs text-gray-500 mb-2 font-medium">페이지 선택</div>
+              <div className="grid grid-cols-5 gap-1 max-w-xs">
+                {getMiddlePages().map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => {
+                      handlePageChange(page)
+                      setShowPageSelector(false)
+                    }}
+                    className={`px-2 py-1.5 text-sm rounded transition-colors ${
+                      page === currentPage
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 hover:bg-blue-100 hover:text-blue-600'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Legend */}

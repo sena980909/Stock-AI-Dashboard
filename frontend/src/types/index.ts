@@ -6,6 +6,7 @@ export interface Stock {
   changePercent: number
   aiScore: number
   sentiment: 'positive' | 'negative' | 'neutral'
+  recommendReason?: string  // AI 추천 이유 (한줄 요약)
 }
 
 export interface StockData {
@@ -21,11 +22,14 @@ export interface News {
   id: string
   title: string
   summary: string
+  content?: string  // 뉴스 본문
   sentiment: 'positive' | 'negative' | 'neutral'
   sentimentScore: number
   source: string
   publishedAt: string
   relatedStocks: string[]
+  keywords?: string[]  // 관련 키워드
+  url?: string  // 원문 URL
 }
 
 export interface AIAnalysis {
@@ -115,6 +119,8 @@ export interface StockSearchResult {
 export interface AiReport {
   stockCode: string
   stockName: string
+  sector: string              // 업종
+  companyDescription: string  // 회사 설명
   currentPrice: number
   changePercent: number
   marketCap: number

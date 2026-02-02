@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { AiReport } from '../../types'
 import { stockApi } from '../../services/api'
+import { FinancialTerm } from '../common/Tooltip'
 
 interface AiReportModalProps {
   stockCode: string | null
@@ -130,7 +131,14 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
               {/* Stock Info Header */}
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">{report.stockName}</h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-2xl font-bold text-gray-900">{report.stockName}</h3>
+                    {report.sector && (
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
+                        {report.sector}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-gray-500">{report.stockCode}</p>
                 </div>
                 <span className={`px-4 py-2 rounded-lg text-lg font-bold ${getSignalColor(report.signalType)}`}>
@@ -138,8 +146,17 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
                 </span>
               </div>
 
+              {/* Company Description */}
+              {report.companyDescription && (
+                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-gray-300">
+                  <p className="text-sm text-gray-600 font-medium mb-1">기업 개요</p>
+                  <p className="text-gray-800">{report.companyDescription}</p>
+                </div>
+              )}
+
               {/* Summary Card */}
               <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-blue-600 font-medium mb-1">AI 분석 요약</p>
                 <p className="text-blue-800 font-medium">{report.summary}</p>
               </div>
 
@@ -182,7 +199,7 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500">시가총액</p>
+                  <p className="text-xs text-gray-500"><FinancialTerm term="시가총액" /></p>
                   <p className="text-lg font-bold">{formatMarketCap(report.marketCap)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-3">
@@ -267,7 +284,7 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">RSI</p>
+                      <p className="text-xs text-gray-500"><FinancialTerm term="RSI" /></p>
                       <p className="text-lg font-bold">{report.technicalIndicators.rsiValue?.toFixed(1)}</p>
                       <p className={`text-xs ${
                         report.technicalIndicators.rsiSignal === 'OVERBOUGHT' ? 'text-red-500' :
@@ -278,7 +295,7 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">MACD 신호</p>
+                      <p className="text-xs text-gray-500"><FinancialTerm term="MACD" /> 신호</p>
                       <p className={`text-lg font-bold ${
                         report.technicalIndicators.macdSignal === 'BUY' ? 'text-green-500' :
                         report.technicalIndicators.macdSignal === 'SELL' ? 'text-red-500' : 'text-gray-500'
@@ -288,7 +305,7 @@ const AiReportModal: React.FC<AiReportModalProps> = ({ stockCode, onClose }) => 
                       </p>
                     </div>
                     <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-500">이동평균</p>
+                      <p className="text-xs text-gray-500"><FinancialTerm term="이동평균선" /></p>
                       <p className={`text-lg font-bold ${
                         report.technicalIndicators.movingAverage === 'ABOVE_MA' ? 'text-green-500' : 'text-red-500'
                       }`}>
