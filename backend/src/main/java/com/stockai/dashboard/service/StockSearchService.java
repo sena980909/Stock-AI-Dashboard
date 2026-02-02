@@ -26,6 +26,7 @@ public class StockSearchService {
     private final StockAnalysisRepository stockAnalysisRepository;
     private final NaverStockService naverStockService;
     private final StockRankService stockRankService;
+    private final Kospi200DataService kospi200DataService;
 
     /**
      * 종목 검색 (종목명 또는 종목코드)
@@ -55,26 +56,49 @@ public class StockSearchService {
             log.warn("[searchStocks] Redis cache read failed: {}", e.getMessage());
         }
 
-        log.info("[searchStocks] Cache MISS - searching from DB and API");
+        log.info("[searchStocks] Cache MISS - searching from KOSPI 200 and DB");
 
         List<StockSearchResultDto> results = new ArrayList<>();
+        Set<String> existingCodes = new HashSet<>();
 
-        // 2. DB에서 검색 (StockAnalysis 테이블)
-        List<StockAnalysis> dbResults = stockAnalysisRepository.searchByKeyword(normalizedKeyword);
-        for (StockAnalysis analysis : dbResults) {
-            results.add(convertToSearchResult(analysis));
+        // 2. 코스피 200 종목에서 검색 (우선)
+        List<Map<String, String>> kospi200Results = kospi200DataService.searchByKeyword(normalizedKeyword);
+        log.info("[searchStocks] Found {} matches in KOSPI 200 for keyword: {}", kospi200Results.size(), normalizedKeyword);
+
+        for (Map<String, String> stock : kospi200Results) {
+            if (results.size() >= MAX_SEARCH_RESULTS) break;
+
+            String code = stock.get("code");
+            if (existingCodes.contains(code)) continue;
+
+            // 실시간 데이터 조회
+            StockSearchResultDto dto = fetchStockWithRealTimeData(code, stock.get("name"), stock.get("market"));
+            if (dto != null) {
+                results.add(dto);
+                existingCodes.add(code);
+            }
         }
 
-        // 3. 네이버 API에서 검색 (DB에 없는 종목 보완)
+        // 3. DB에서 추가 검색 (코스피 200에 없는 종목)
+        if (results.size() < MAX_SEARCH_RESULTS) {
+            List<StockAnalysis> dbResults = stockAnalysisRepository.searchByKeyword(normalizedKeyword);
+            for (StockAnalysis analysis : dbResults) {
+                if (results.size() >= MAX_SEARCH_RESULTS) break;
+                if (!existingCodes.contains(analysis.getStockCode())) {
+                    results.add(convertToSearchResult(analysis));
+                    existingCodes.add(analysis.getStockCode());
+                }
+            }
+        }
+
+        // 4. 네이버 API에서 검색 (추가 종목 보완)
         if (results.size() < MAX_SEARCH_RESULTS) {
             List<Map<String, Object>> naverResults = naverStockService.searchStocks(normalizedKeyword);
-            Set<String> existingCodes = results.stream()
-                    .map(StockSearchResultDto::getCode)
-                    .collect(Collectors.toSet());
 
             for (Map<String, Object> naverStock : naverResults) {
+                if (results.size() >= MAX_SEARCH_RESULTS) break;
                 String code = (String) naverStock.get("code");
-                if (!existingCodes.contains(code) && results.size() < MAX_SEARCH_RESULTS) {
+                if (!existingCodes.contains(code)) {
                     StockSearchResultDto dto = createSearchResultFromNaver(naverStock);
                     if (dto != null) {
                         results.add(dto);
@@ -178,20 +202,17 @@ public class StockSearchService {
     }
 
     /**
-     * 네이버 API 결과를 SearchResultDto로 변환
+     * 코스피 200 종목의 실시간 데이터 조회
      */
-    private StockSearchResultDto createSearchResultFromNaver(Map<String, Object> naverStock) {
+    private StockSearchResultDto fetchStockWithRealTimeData(String code, String name, String market) {
         try {
-            String code = (String) naverStock.get("code");
-            String name = (String) naverStock.get("name");
-            String market = (String) naverStock.get("market");
-
-            // 실시간 가격 정보 조회
             Map<String, Object> stockDetail = naverStockService.fetchStock(code);
 
             Long currentPrice = null;
             Double changeRate = null;
             Long marketCap = null;
+            Integer aiScore = null;
+            String signalType = null;
 
             if (stockDetail != null) {
                 if (stockDetail.get("price") != null) {
@@ -203,16 +224,53 @@ public class StockSearchService {
                 if (stockDetail.get("marketCap") != null) {
                     marketCap = ((Number) stockDetail.get("marketCap")).longValue();
                 }
+                if (stockDetail.get("aiScore") != null) {
+                    aiScore = ((Number) stockDetail.get("aiScore")).intValue();
+                }
+                // 이름이 없으면 API에서 가져온 이름 사용
+                if (name == null && stockDetail.get("name") != null) {
+                    name = stockDetail.get("name").toString();
+                }
+            }
+
+            // AI 점수 기반 신호 결정
+            if (aiScore != null) {
+                if (aiScore >= 70) signalType = "BUY";
+                else if (aiScore >= 50) signalType = "NEUTRAL";
+                else signalType = "SELL";
             }
 
             return StockSearchResultDto.builder()
                     .code(code)
                     .name(name)
-                    .market(market)
+                    .market(market != null ? market : "KOSPI")
                     .currentPrice(currentPrice)
                     .changeRate(changeRate)
                     .marketCap(marketCap)
+                    .aiScore(aiScore)
+                    .signalType(signalType)
                     .build();
+        } catch (Exception e) {
+            log.warn("[fetchStockWithRealTimeData] Failed to fetch data for {}: {}", code, e.getMessage());
+            // 실시간 데이터 실패 시 기본 정보만 반환
+            return StockSearchResultDto.builder()
+                    .code(code)
+                    .name(name)
+                    .market(market != null ? market : "KOSPI")
+                    .build();
+        }
+    }
+
+    /**
+     * 네이버 API 결과를 SearchResultDto로 변환
+     */
+    private StockSearchResultDto createSearchResultFromNaver(Map<String, Object> naverStock) {
+        try {
+            String code = (String) naverStock.get("code");
+            String name = (String) naverStock.get("name");
+            String market = (String) naverStock.get("market");
+
+            return fetchStockWithRealTimeData(code, name, market);
         } catch (Exception e) {
             log.warn("[createSearchResultFromNaver] Failed to create result: {}", e.getMessage());
             return null;
