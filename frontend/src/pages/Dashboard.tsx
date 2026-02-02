@@ -3,7 +3,7 @@ import StockList from '../components/dashboard/StockList'
 import NewsFeed from '../components/dashboard/NewsFeed'
 import HitRateCard from '../components/dashboard/HitRateCard'
 import WatchlistCard from '../components/dashboard/WatchlistCard'
-import TopRankList from '../components/dashboard/TopRankList'
+import Kospi200List from '../components/dashboard/Kospi200List'
 import AiReportModal from '../components/dashboard/AiReportModal'
 import StockSearch from '../components/common/StockSearch'
 import { useStockWebSocket } from '../hooks/useStockWebSocket'
@@ -74,9 +74,9 @@ function Dashboard() {
           </div>
         </header>
 
-        {/* Top 10 시가총액 섹션 */}
+        {/* 코스피 200 섹션 */}
         <section className="mb-8">
-          <TopRankList onStockClick={handleStockClick} />
+          <Kospi200List onStockClick={handleStockClick} />
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

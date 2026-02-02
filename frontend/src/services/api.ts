@@ -90,18 +90,81 @@ export const stockApi = {
   getPopularSearchTerms: async (): Promise<string[]> => {
     const response = await api.get('/stocks/search/popular')
     return response.data.data ?? []
+  },
+
+  // 코스피 200 페이지네이션 조회
+  getKospi200: async (page: number = 1, size: number = 10): Promise<Kospi200Response> => {
+    const response = await api.get(`/kospi200?page=${page}&size=${size}`)
+    return response.data
+  },
+
+  // 코스피 200 캐시 새로고침
+  refreshKospi200Cache: async (): Promise<void> => {
+    await api.post('/kospi200/refresh')
   }
+}
+
+// 코스피 200 응답 타입
+export interface Kospi200Response {
+  success: boolean
+  data: StockSearchResult[]
+  page: number
+  size: number
+  totalCount: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+// 관심 종목 API
+export const interestApi = {
+  // 관심 종목 목록 조회
+  getInterestStocks: async (): Promise<InterestStock[]> => {
+    const response = await api.get('/interests')
+    return response.data
+  },
+
+  // 관심 종목 등록
+  addInterestStock: async (stockCode: string, stockName: string): Promise<InterestStock> => {
+    const response = await api.post('/interests', { stockCode, stockName })
+    return response.data
+  },
+
+  // 관심 종목 삭제
+  removeInterestStock: async (stockCode: string): Promise<void> => {
+    await api.delete(`/interests/${stockCode}`)
+  },
+
+  // 관심 종목 여부 확인
+  checkInterest: async (stockCode: string): Promise<boolean> => {
+    const response = await api.get(`/interests/check/${stockCode}`)
+    return response.data.interested
+  }
+}
+
+// 관심 종목 타입
+export interface InterestStock {
+  id: number
+  stockCode: string
+  stockName: string
+  targetPrice?: number
+  memo?: string
+  createdAt: string
 }
 
 export const newsApi = {
   getLatestNews: async (): Promise<News[]> => {
     const response = await api.get('/news/latest')
-    return response.data
+    return response.data.data ?? response.data ?? []
   },
 
   getNewsByStock: async (symbol: string): Promise<News[]> => {
     const response = await api.get(`/news/stock/${symbol}`)
-    return response.data
+    return response.data.data ?? response.data ?? []
+  },
+
+  refreshNews: async (): Promise<void> => {
+    await api.post('/news/refresh')
   }
 }
 
