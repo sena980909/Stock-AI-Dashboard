@@ -476,20 +476,22 @@ public class StockRankService {
     }
 
     /**
-     * 종목 코드로 시가총액 조회 (하드코딩된 매핑, 단위: 원)
+     * 종목 코드로 시가총액 조회 (fallback 값, 실시간 API 실패 시 사용)
+     * 주의: 이 값은 fallback용이며, 실제 시가총액은 네이버 API에서 가져옴
      */
     private Long getMarketCapByCode(String stockCode) {
         Map<String, Long> marketCaps = new HashMap<>();
-        marketCaps.put("005930", 400_000_000_000_000L);  // 삼성전자 ~400조
-        marketCaps.put("000660", 120_000_000_000_000L);  // SK하이닉스 ~120조
-        marketCaps.put("373220", 100_000_000_000_000L);  // LG에너지솔루션 ~100조
-        marketCaps.put("207940", 50_000_000_000_000L);   // 삼성바이오 ~50조
-        marketCaps.put("005380", 45_000_000_000_000L);   // 현대차 ~45조
-        marketCaps.put("000270", 40_000_000_000_000L);   // 기아 ~40조
-        marketCaps.put("068270", 35_000_000_000_000L);   // 셀트리온 ~35조
-        marketCaps.put("035420", 35_000_000_000_000L);   // NAVER ~35조
-        marketCaps.put("005490", 30_000_000_000_000L);   // POSCO홀딩스 ~30조
-        marketCaps.put("035720", 25_000_000_000_000L);   // 카카오 ~25조
+        // 2026년 2월 기준 대략적인 시가총액 (fallback용)
+        marketCaps.put("005930", 890_000_000_000_000L);  // 삼성전자 ~890조
+        marketCaps.put("000660", 170_000_000_000_000L);  // SK하이닉스 ~170조
+        marketCaps.put("373220", 95_000_000_000_000L);   // LG에너지솔루션 ~95조
+        marketCaps.put("207940", 55_000_000_000_000L);   // 삼성바이오 ~55조
+        marketCaps.put("005380", 50_000_000_000_000L);   // 현대차 ~50조
+        marketCaps.put("000270", 42_000_000_000_000L);   // 기아 ~42조
+        marketCaps.put("068270", 38_000_000_000_000L);   // 셀트리온 ~38조
+        marketCaps.put("035420", 32_000_000_000_000L);   // NAVER ~32조
+        marketCaps.put("005490", 28_000_000_000_000L);   // POSCO홀딩스 ~28조
+        marketCaps.put("035720", 20_000_000_000_000L);   // 카카오 ~20조
         return marketCaps.getOrDefault(stockCode, 10_000_000_000_000L);
     }
 

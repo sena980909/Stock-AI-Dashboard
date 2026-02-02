@@ -221,14 +221,20 @@ public class NaverStockService {
 
             JsonNode detailRoot = objectMapper.readTree(response.getBody());
 
-            // totalInfos에서 시가총액 찾기
+            // totalInfos에서 시가총액 찾기 (키: "시총" 또는 "시가총액", code: "marketValue")
             JsonNode totalInfos = detailRoot.path("totalInfos");
             if (totalInfos.isArray()) {
                 for (JsonNode info : totalInfos) {
                     String key = info.path("key").asText();
-                    if ("시가총액".equals(key)) {
+                    String code = info.path("code").asText();
+                    // "시총", "시가총액" 키 또는 "marketValue" 코드로 찾기
+                    if ("시총".equals(key) || "시가총액".equals(key) || "marketValue".equalsIgnoreCase(code)) {
                         String valueStr = info.path("value").asText();
-                        return parseMarketCapString(valueStr);
+                        Long marketCap = parseMarketCapString(valueStr);
+                        if (marketCap != null && marketCap > 0) {
+                            log.debug("[fetchMarketCapFromDetailApi] Found marketCap from totalInfos: {} -> {}", valueStr, marketCap);
+                            return marketCap;
+                        }
                     }
                 }
             }
@@ -238,9 +244,14 @@ public class NaverStockService {
             if (dealTrendInfos.isArray()) {
                 for (JsonNode info : dealTrendInfos) {
                     String key = info.path("key").asText();
-                    if ("시가총액".equals(key) || "marketCap".equalsIgnoreCase(key)) {
+                    String code = info.path("code").asText();
+                    if ("시총".equals(key) || "시가총액".equals(key) || "marketValue".equalsIgnoreCase(code)) {
                         String valueStr = info.path("value").asText();
-                        return parseMarketCapString(valueStr);
+                        Long marketCap = parseMarketCapString(valueStr);
+                        if (marketCap != null && marketCap > 0) {
+                            log.debug("[fetchMarketCapFromDetailApi] Found marketCap from dealTrendInfos: {} -> {}", valueStr, marketCap);
+                            return marketCap;
+                        }
                     }
                 }
             }
