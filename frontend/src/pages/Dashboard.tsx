@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import StockList from '../components/dashboard/StockList'
 import NewsFeed from '../components/dashboard/NewsFeed'
+import HitRateCard from '../components/dashboard/HitRateCard'
+import WatchlistCard from '../components/dashboard/WatchlistCard'
+import TopRankList from '../components/dashboard/TopRankList'
+import AiReportModal from '../components/dashboard/AiReportModal'
 import { useStockWebSocket } from '../hooks/useStockWebSocket'
 import { Stock } from '../types'
 import { stockApi } from '../services/api'
@@ -9,6 +13,7 @@ function Dashboard() {
   const { stocks: wsStocks, isConnected } = useStockWebSocket()
   const [apiStocks, setApiStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedStockCode, setSelectedStockCode] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchStocks = async () => {
@@ -22,39 +27,74 @@ function Dashboard() {
       }
     }
     fetchStocks()
-    // 30초마다 갱신
     const interval = setInterval(fetchStocks, 30000)
     return () => clearInterval(interval)
   }, [])
 
   const displayStocks = wsStocks.length > 0 ? wsStocks : apiStocks
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Stock AI Dashboard</h1>
-        <div className="flex items-center mt-2">
-          <span className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          <span className="text-sm text-gray-600">
-            {isConnected ? '실시간 연결됨' : '연결 끊김'}
-          </span>
-        </div>
-      </header>
+  const handleStockClick = (stockCode: string) => {
+    setSelectedStockCode(stockCode)
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          {loading ? (
-            <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-              주가 데이터 로딩 중...
+  const handleModalClose = () => {
+    setSelectedStockCode(null)
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="container mx-auto px-4 py-8">
+        <header className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Stock AI Dashboard</h1>
+          <p className="text-gray-500 mt-1">AI 기반 주식 분석 및 추천 서비스</p>
+          <div className="flex items-center mt-2">
+            <span className={`w-3 h-3 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+            <span className="text-sm text-gray-600">
+              {isConnected ? '실시간 연결됨' : '연결 끊김'}
+            </span>
+          </div>
+        </header>
+
+        {/* Top 10 시가총액 섹션 */}
+        <section className="mb-8">
+          <TopRankList onStockClick={handleStockClick} />
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* 메인 영역: AI 추천 종목 */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">AI 추천 종목</h2>
+              {loading ? (
+                <div className="p-8 text-center text-gray-500">
+                  주가 데이터 로딩 중...
+                </div>
+              ) : (
+                <StockList stocks={displayStocks} />
+              )}
             </div>
-          ) : (
-            <StockList stocks={displayStocks} />
-          )}
-        </div>
-        <div>
-          <NewsFeed />
+          </div>
+
+          {/* 사이드바 1: 관심종목 + 적중률 */}
+          <div className="space-y-6">
+            <WatchlistCard />
+            <HitRateCard />
+          </div>
+
+          {/* 사이드바 2: 뉴스 */}
+          <div>
+            <NewsFeed />
+          </div>
         </div>
       </div>
+
+      {/* AI Report Modal */}
+      {selectedStockCode && (
+        <AiReportModal
+          stockCode={selectedStockCode}
+          onClose={handleModalClose}
+        />
+      )}
     </div>
   )
 }

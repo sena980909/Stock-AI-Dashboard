@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Stock, StockData, News, AIAnalysis } from '../types'
+import { Stock, StockData, News, AIAnalysis, TopStock, AiReport } from '../types'
 
 const api = axios.create({
   baseURL: '/api',
@@ -36,9 +36,11 @@ export const stockApi = {
     return response.data.stocks ?? response.data
   },
 
-  getStockHistory: async (symbol: string): Promise<StockData[]> => {
-    const response = await api.get(`/stocks/${symbol}/history`)
-    return response.data
+  getStockHistory: async (symbol: string, days: number = 60): Promise<StockData[]> => {
+    const response = await api.get(`/stocks/${symbol}/history?days=${days}`)
+    // 백엔드 응답: { stockCode, days, count, data: [...] }
+    const data = response.data.data ?? response.data
+    return Array.isArray(data) ? data : []
   },
 
   getAIAnalysis: async (symbol: string): Promise<AIAnalysis> => {
@@ -49,6 +51,23 @@ export const stockApi = {
   getCurrentPrice: async (symbol: string): Promise<Stock> => {
     const response = await api.get(`/stocks/${symbol}/current`)
     return response.data
+  },
+
+  // 시가총액 Top 10 종목 조회
+  getTopRankStocks: async (): Promise<TopStock[]> => {
+    const response = await api.get('/stocks/top-rank')
+    return response.data.data ?? []
+  },
+
+  // AI 상세 리포트 조회
+  getAiReport: async (stockCode: string): Promise<AiReport> => {
+    const response = await api.get(`/stocks/${stockCode}/ai-report`)
+    return response.data.data
+  },
+
+  // Top 10 캐시 갱신
+  refreshTopRankCache: async (): Promise<void> => {
+    await api.post('/stocks/top-rank/refresh')
   }
 }
 

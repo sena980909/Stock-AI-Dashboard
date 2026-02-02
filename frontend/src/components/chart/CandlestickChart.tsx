@@ -7,10 +7,23 @@ interface CandlestickChartProps {
 }
 
 function CandlestickChart({ data }: CandlestickChartProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-[400px] flex items-center justify-center bg-gray-50 rounded">
+        <p className="text-gray-500">차트 데이터가 없습니다</p>
+      </div>
+    )
+  }
+
   const series = [{
     data: data.map(item => ({
       x: new Date(item.timestamp),
-      y: [item.open, item.high, item.low, item.close]
+      y: [
+        Number(item.open),
+        Number(item.high),
+        Number(item.low),
+        Number(item.close)
+      ]
     }))
   }]
 

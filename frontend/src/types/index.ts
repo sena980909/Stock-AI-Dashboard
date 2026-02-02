@@ -54,3 +54,63 @@ export interface SignalAlert {
   reason: string
   timestamp: string
 }
+
+// Top 10 종목 DTO
+export interface TopStock {
+  rank: number
+  stockCode: string
+  stockName: string
+  currentPrice: number
+  changePercent: number
+  marketCap: number
+  aiScore: number
+  summary: string
+  signalType: 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL'
+  updatedAt: string
+}
+
+// SWOT 분석
+export interface SwotAnalysis {
+  strengths: string[]
+  weaknesses: string[]
+  opportunities: string[]
+  threats: string[]
+}
+
+// 기술적 지표
+export interface TechnicalIndicators {
+  trend: 'UPTREND' | 'DOWNTREND' | 'SIDEWAYS'
+  rsiValue: number
+  rsiSignal: 'OVERBOUGHT' | 'OVERSOLD' | 'NEUTRAL'
+  macdValue: number
+  macdSignal: 'BUY' | 'SELL' | 'NEUTRAL'
+  movingAverage: 'ABOVE_MA' | 'BELOW_MA'
+  volumeChange: number
+}
+
+// 감성 분석 데이터
+export interface SentimentData {
+  positiveNewsCount: number
+  negativeNewsCount: number
+  neutralNewsCount: number
+  overallSentiment: number
+  recentHeadlines: string[]
+}
+
+// AI 상세 리포트
+export interface AiReport {
+  stockCode: string
+  stockName: string
+  currentPrice: number
+  changePercent: number
+  marketCap: number
+  totalScore: number
+  technicalScore: number
+  sentimentScore: number
+  signalType: 'STRONG_BUY' | 'BUY' | 'NEUTRAL' | 'SELL' | 'STRONG_SELL'
+  summary: string
+  swot: SwotAnalysis
+  technicalIndicators: TechnicalIndicators
+  sentimentData: SentimentData
+  analyzedAt: string
+}

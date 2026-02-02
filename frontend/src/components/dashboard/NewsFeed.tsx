@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { News } from '../../types'
 
 const MOCK_NEWS: News[] = [
@@ -35,7 +35,7 @@ const MOCK_NEWS: News[] = [
 ]
 
 function NewsFeed() {
-  const [news, setNews] = useState<News[]>(MOCK_NEWS)
+  const [news] = useState<News[]>(MOCK_NEWS)
 
   return (
     <div className="bg-white rounded-lg shadow">

@@ -40,13 +40,7 @@ public class StockController {
         return ResponseEntity.ok(stockService.getCurrentPrice(symbol));
     }
 
-    @GetMapping("/{symbol}/history")
-    public ResponseEntity<Map<String, Object>> getStockHistory(
-            @PathVariable String symbol,
-            @RequestParam(defaultValue = "1M") String period,
-            @RequestParam(defaultValue = "1d") String interval) {
-        return ResponseEntity.ok(stockService.getStockHistory(symbol, period, interval));
-    }
+    // history 엔드포인트는 StockHistoryController에서 처리
 
     @GetMapping("/{symbol}/analysis")
     public ResponseEntity<Map<String, Object>> getAIAnalysis(@PathVariable String symbol) {

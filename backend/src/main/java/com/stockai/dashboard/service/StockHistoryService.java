@@ -39,12 +39,20 @@ public class StockHistoryService {
 
     /**
      * 최근 N일간 일봉 데이터 조회
+     * DB에 데이터가 없으면 네이버에서 즉시 수집
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<StockHistoryDto> getHistory(String stockCode, int days) {
         LocalDate startDate = LocalDate.now().minusDays(days);
         List<StockHistory> histories = stockHistoryRepository
                 .findRecentHistory(stockCode, startDate);
+
+        // DB에 데이터가 없으면 네이버에서 수집
+        if (histories.isEmpty()) {
+            log.info("No history data for {}, fetching from Naver...", stockCode);
+            fetchAndSaveHistory(stockCode);
+            histories = stockHistoryRepository.findRecentHistory(stockCode, startDate);
+        }
 
         List<StockHistoryDto> result = new ArrayList<>();
         for (int i = 0; i < histories.size(); i++) {
@@ -93,10 +101,11 @@ public class StockHistoryService {
                     url, HttpMethod.GET, entity, String.class);
 
             JsonNode root = objectMapper.readTree(response.getBody());
-            JsonNode priceInfos = root.path("priceInfos");
 
-            if (priceInfos.isArray()) {
-                for (JsonNode info : priceInfos) {
+            // 네이버 API는 직접 배열로 반환
+            if (root.isArray()) {
+                int savedCount = 0;
+                for (JsonNode info : root) {
                     String dateStr = info.path("localDate").asText();
                     LocalDate date = LocalDate.parse(dateStr, DateTimeFormatter.BASIC_ISO_DATE);
 
@@ -108,19 +117,20 @@ public class StockHistoryService {
                     StockHistory history = StockHistory.builder()
                             .stockCode(stockCode)
                             .tradeDate(date)
-                            .openPrice(new BigDecimal(info.path("openPrice").asText()))
-                            .highPrice(new BigDecimal(info.path("highPrice").asText()))
-                            .lowPrice(new BigDecimal(info.path("lowPrice").asText()))
-                            .closePrice(new BigDecimal(info.path("closePrice").asText()))
+                            .openPrice(BigDecimal.valueOf(info.path("openPrice").asDouble()))
+                            .highPrice(BigDecimal.valueOf(info.path("highPrice").asDouble()))
+                            .lowPrice(BigDecimal.valueOf(info.path("lowPrice").asDouble()))
+                            .closePrice(BigDecimal.valueOf(info.path("closePrice").asDouble()))
                             .volume(info.path("accumulatedTradingVolume").asLong())
                             .build();
 
                     stockHistoryRepository.save(history);
-                    log.debug("Saved history: {} - {}", stockCode, date);
+                    savedCount++;
                 }
+                log.info("Saved {} history records for {}", savedCount, stockCode);
             }
         } catch (Exception e) {
-            log.error("Error fetching history for {}: {}", stockCode, e.getMessage());
+            log.error("Error fetching history for {}: {}", stockCode, e.getMessage(), e);
         }
     }
 
