@@ -247,18 +247,40 @@ public class StockRankService {
     }
 
     /**
-     * 실시간 데이터로 업데이트
+     * 실시간 데이터로 업데이트 (시가총액 포함)
      */
     private void updateWithRealTimeData(StockAnalysis analysis, String stockCode) {
         try {
             var stockData = naverStockService.fetchStock(stockCode);
             if (stockData != null) {
+                // 종목명
                 analysis.setStockName(stockData.get("name") != null ?
                         stockData.get("name").toString() : getStockNameByCode(stockCode));
+
+                // 현재가
                 analysis.setCurrentPrice(stockData.get("price") != null ?
                         ((Number) stockData.get("price")).longValue() : null);
+
+                // 등락률
                 analysis.setChangePercent(stockData.get("changePercent") != null ?
                         ((Number) stockData.get("changePercent")).doubleValue() : null);
+
+                // 시가총액 - 실시간 데이터 우선, 없으면 하드코딩 값 사용
+                Long marketCap = null;
+                if (stockData.get("marketCap") != null) {
+                    marketCap = ((Number) stockData.get("marketCap")).longValue();
+                }
+                // 실시간 시가총액이 없거나 0이면 fallback 사용
+                if (marketCap == null || marketCap == 0) {
+                    marketCap = getMarketCapByCode(stockCode);
+                    log.debug("[updateWithRealTimeData] Using fallback marketCap for {}: {}", stockCode, marketCap);
+                } else {
+                    log.debug("[updateWithRealTimeData] Using real-time marketCap for {}: {}", stockCode, marketCap);
+                }
+                analysis.setMarketCap(marketCap);
+            } else {
+                // API 실패 시 기본값 설정
+                analysis.setStockName(getStockNameByCode(stockCode));
                 analysis.setMarketCap(getMarketCapByCode(stockCode));
             }
         } catch (Exception e) {

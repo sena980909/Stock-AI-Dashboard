@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { Stock, StockData, News, AIAnalysis, TopStock, AiReport } from '../types'
+import { Stock, StockData, News, AIAnalysis, TopStock, AiReport, StockSearchResult } from '../types'
 
 const api = axios.create({
   baseURL: '/api',
@@ -68,6 +68,28 @@ export const stockApi = {
   // Top 10 캐시 갱신
   refreshTopRankCache: async (): Promise<void> => {
     await api.post('/stocks/top-rank/refresh')
+  },
+
+  // 종목 검색
+  searchStocks: async (keyword: string): Promise<StockSearchResult[]> => {
+    const response = await api.get(`/stocks/search?keyword=${encodeURIComponent(keyword)}`)
+    return response.data.data ?? []
+  },
+
+  // 종목 코드로 직접 조회
+  getStockByCode: async (code: string): Promise<StockSearchResult | null> => {
+    try {
+      const response = await api.get(`/stocks/code/${code}`)
+      return response.data.data
+    } catch {
+      return null
+    }
+  },
+
+  // 인기 검색어 조회
+  getPopularSearchTerms: async (): Promise<string[]> => {
+    const response = await api.get('/stocks/search/popular')
+    return response.data.data ?? []
   }
 }
 

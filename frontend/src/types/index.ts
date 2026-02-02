@@ -97,6 +97,20 @@ export interface SentimentData {
   recentHeadlines: string[]
 }
 
+// 검색 결과
+export interface StockSearchResult {
+  code: string
+  name: string
+  market: string
+  currentPrice: number | null
+  changeRate: number | null
+  marketCap: number | null
+  aiScore: number | null
+  signalType: string | null
+  formattedMarketCap?: string
+  formattedPrice?: string
+}
+
 // AI 상세 리포트
 export interface AiReport {
   stockCode: string
